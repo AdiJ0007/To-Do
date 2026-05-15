@@ -35,23 +35,28 @@
 
       <section id="authView" class="auth-view reveal">
         <div class="panel auth-card">
-          <div class="auth-mode-tabs" role="tablist" aria-label="Authentication mode">
-            <button id="loginTabBtn" type="button" class="auth-tab active">Sign In</button>
-            <button id="registerTabBtn" type="button" class="auth-tab">Register</button>
+          <div class="auth-mode-tabs" role="tablist" aria-label="User type">
+            <button id="adminLoginBtn" type="button" class="auth-tab active" data-user-type="admin">Admin Login</button>
+            <button id="memberLoginBtn" type="button" class="auth-tab" data-user-type="member">Member Login</button>
+            <button id="adminRegisterBtn" type="button" class="auth-tab" data-user-type="admin-register">Admin Register</button>
+            <button id="memberRegisterBtn" type="button" class="auth-tab" data-user-type="member-register">Member Register</button>
           </div>
           <form id="authForm" class="auth-form">
-            <label id="nameField">
+            <label id="nameField" class="hidden">
               <span>Name</span>
               <input id="authName" type="text" maxlength="120" placeholder="Your name" />
             </label>
             <label>
-              <span>Email</span>
-              <input id="authEmail" type="email" maxlength="255" placeholder="name@example.com" required />
+              <span id="emailLabel">Email (admin@test.com)</span>
+              <input id="authEmail" type="email" maxlength="255" placeholder="name.admin@test.com" required />
             </label>
             <label>
               <span>Password</span>
               <input id="authPassword" type="password" minlength="8" maxlength="128" required />
             </label>
+            <p id="emailFormatHint" class="hint-text" style="font-size: 0.85rem; color: #666; margin-top: -8px;">
+              Format: <span id="emailFormatText">name.admin@domain.com</span>
+            </p>
             <div class="auth-actions">
               <button id="authSubmitBtn" class="btn-accent" type="submit">Sign In</button>
             </div>

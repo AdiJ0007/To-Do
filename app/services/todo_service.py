@@ -29,16 +29,23 @@ def _load_assignees(db: Session, assignee_ids: list[int]) -> list[User]:
 
 
 def _visible_todo_query(db: Session, user: User) -> Select[tuple[Todo]]:
-    accessible_project_ids = select(project_members.c.project_id).where(
-        project_members.c.user_id == user.id
-    )
-    return select(Todo).where(
-        or_(
-            Todo.created_by_id == user.id,
-            Todo.project_id.in_(accessible_project_ids),
-            Todo.assignees.any(User.id == user.id),
+    from app.models.project import Project
+    
+    # Admins see: todos in projects they own + todos assigned to them
+    # Members see: only todos assigned to them
+    if user.role == "admin":
+        admin_project_ids = select(Project.id).where(Project.owner_id == user.id)
+        return select(Todo).where(
+            or_(
+                Todo.project_id.in_(admin_project_ids),
+                Todo.assignees.any(User.id == user.id),
+            )
         )
-    )
+    else:
+        # Members/taskers only see tasks assigned to them
+        return select(Todo).where(
+            Todo.assignees.any(User.id == user.id)
+        )
 
 
 def create_todo(db: Session, user: User, payload: TodoCreate) -> Todo:

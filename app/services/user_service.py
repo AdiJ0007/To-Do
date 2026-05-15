@@ -1,9 +1,25 @@
+import re
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.models.user import User
 from app.schemas.auth import SignUpRequest
+
+
+def detect_role_from_email(email: str) -> str:
+    """
+    Detect user role based on email format.
+    Admin: <name>.admin@<domain>.com
+    Member/Tasker: <name>.member@<domain>.com or any other format defaults to member
+    """
+    email_lower = email.strip().lower()
+    if ".admin@" in email_lower:
+        return "admin"
+    elif ".member@" in email_lower:
+        return "member"
+    else:
+        return "member"  # Default to member for other formats
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
@@ -16,11 +32,13 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 
 
 def create_user(db: Session, payload: SignUpRequest) -> User:
+    normalized_email = payload.email.strip().lower()
+    detected_role = detect_role_from_email(normalized_email)
     user = User(
         name=payload.name.strip(),
-        email=payload.email.strip().lower(),
+        email=normalized_email,
         password_hash=hash_password(payload.password),
-        role="member",
+        role=detected_role,
     )
     db.add(user)
     db.commit()
@@ -31,6 +49,7 @@ def create_user(db: Session, payload: SignUpRequest) -> User:
 def upsert_oauth_user(db: Session, *, name: str, email: str) -> User:
     normalized_email = email.strip().lower()
     cleaned_name = name.strip() or normalized_email.split("@", 1)[0]
+    detected_role = detect_role_from_email(normalized_email)
     user = get_user_by_email(db, normalized_email)
 
     if user is None:
@@ -38,7 +57,7 @@ def upsert_oauth_user(db: Session, *, name: str, email: str) -> User:
             name=cleaned_name,
             email=normalized_email,
             password_hash=hash_password(normalized_email + ":google"),
-            role="member",
+            role=detected_role,
         )
         db.add(user)
     else:

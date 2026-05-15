@@ -3,7 +3,7 @@ const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const state = {
   token: localStorage.getItem("todo_access_token") || "",
   currentUser: null,
-  authMode: "login",
+  authMode: "admin-login",
   users: [],
   projects: [],
   todos: [],
@@ -33,9 +33,13 @@ const els = {
   authPassword: document.getElementById("authPassword"),
   authSubmitBtn: document.getElementById("authSubmitBtn"),
   googleSignInBtn: document.getElementById("googleSignInBtn"),
-  loginTabBtn: document.getElementById("loginTabBtn"),
-  registerTabBtn: document.getElementById("registerTabBtn"),
+  adminLoginBtn: document.getElementById("adminLoginBtn"),
+  memberLoginBtn: document.getElementById("memberLoginBtn"),
+  adminRegisterBtn: document.getElementById("adminRegisterBtn"),
+  memberRegisterBtn: document.getElementById("memberRegisterBtn"),
   nameField: document.getElementById("nameField"),
+  emailLabel: document.getElementById("emailLabel"),
+  emailFormatText: document.getElementById("emailFormatText"),
   projectForm: document.getElementById("projectForm"),
   projectName: document.getElementById("projectName"),
   projectDescription: document.getElementById("projectDescription"),
@@ -230,12 +234,25 @@ function parseOAuthReturn() {
 
 function setAuthMode(mode) {
   state.authMode = mode;
-  const isRegister = mode === "register";
-  els.loginTabBtn.classList.toggle("active", !isRegister);
-  els.registerTabBtn.classList.toggle("active", isRegister);
-  els.nameField.style.display = isRegister ? "block" : "none";
+  const isRegister = mode.includes("register");
+  const isAdmin = mode.includes("admin");
+  
+  // Update active tabs
+  document.querySelectorAll(".auth-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-user-type") === mode);
+  });
+  
+  // Show/hide name field for registration
+  els.nameField.classList.toggle("hidden", !isRegister);
   els.authName.required = isRegister;
   els.authName.disabled = !isRegister;
+  
+  // Update email label and format hint
+  els.emailLabel.textContent = isAdmin ? "Email (admin format)" : "Email (member format)";
+  els.emailFormatText.textContent = isAdmin ? "name.admin@domain.com" : "name.member@domain.com";
+  els.authEmail.placeholder = isAdmin ? "john.admin@test.com" : "john.member@test.com";
+  
+  // Update submit button
   els.authSubmitBtn.textContent = isRegister ? "Register" : "Sign In";
 }
 
@@ -420,12 +437,11 @@ function openProjectDialog(project) {
     },
   });
   
-  // Populate add collaborators select with all users
-  setMultiSelectOptions(
-    els.editProjectMemberIds,
-    state.users.map((user) => ({ value: user.id, label: `${user.name} (${user.email})` })),
-    [], // Don't pre-select anyone in the add section
-  );
+  // Populate add collaborators select with non-admin users (exclude global admins and the owner)
+  const addOptions = state.users
+    .filter((u) => u.role !== "admin" && u.id !== project.owner_id)
+    .map((user) => ({ value: user.id, label: `${user.name} (${user.email})` }));
+  setMultiSelectOptions(els.editProjectMemberIds, addOptions, []);
   els.projectDialog.showModal();
 }
 
@@ -435,10 +451,15 @@ function closeProjectDialog() {
 }
 
 function renderUsers() {
-  const options = state.users.map((user) => ({ value: user.id, label: `${user.name} (${user.email})` }));
-  setMultiSelectOptions(els.projectMemberIds, options);
-  setMultiSelectOptions(els.todoAssigneeIds, options);
-  setMultiSelectOptions(els.editAssigneeIds, options);
+  const allOptions = state.users.map((user) => ({ value: user.id, label: `${user.name} (${user.email})` }));
+  // For project collaborators, exclude global admins and the current user (who will be owner/admin of the project)
+  const collaboratorOptions = state.users
+    .filter((u) => u.role !== "admin" && u.id !== state.currentUser?.id)
+    .map((user) => ({ value: user.id, label: `${user.name} (${user.email})` }));
+
+  setMultiSelectOptions(els.projectMemberIds, collaboratorOptions);
+  setMultiSelectOptions(els.todoAssigneeIds, allOptions);
+  setMultiSelectOptions(els.editAssigneeIds, allOptions);
 }
 
 function renderUsersDialog() {
@@ -634,8 +655,12 @@ async function refreshData() {
 function setupAuthHandlers() {
   setAuthMode(state.authMode);
 
-  els.loginTabBtn.addEventListener("click", () => setAuthMode("login"));
-  els.registerTabBtn.addEventListener("click", () => setAuthMode("register"));
+  // Setup tab buttons
+  els.adminLoginBtn?.addEventListener("click", () => setAuthMode("admin-login"));
+  els.memberLoginBtn?.addEventListener("click", () => setAuthMode("member-login"));
+  els.adminRegisterBtn?.addEventListener("click", () => setAuthMode("admin-register"));
+  els.memberRegisterBtn?.addEventListener("click", () => setAuthMode("member-register"));
+  
   els.googleSignInBtn.addEventListener("click", () => {
     window.location.href = `${DEFAULT_API_BASE_URL}/api/v1/auth/google`;
   });
@@ -645,7 +670,19 @@ function setupAuthHandlers() {
 
     const email = els.authEmail.value.trim();
     const password = els.authPassword.value;
-    const isRegister = state.authMode === "register";
+    const isRegister = state.authMode.includes("register");
+    const isAdmin = state.authMode.includes("admin");
+    
+    // Validate email format
+    if (isAdmin && !email.includes(".admin@")) {
+      setFeedback("Admin email must be in format: name.admin@domain.com", true);
+      return;
+    }
+    if (!isAdmin && !email.includes(".member@")) {
+      setFeedback("Member email must be in format: name.member@domain.com", true);
+      return;
+    }
+    
     const payload = isRegister
       ? {
           name: els.authName.value.trim(),
@@ -669,7 +706,7 @@ function setupAuthHandlers() {
       });
       setSession(response.access_token, response.user);
       els.authForm.reset();
-      setAuthMode("login");
+      setAuthMode("admin-login");
       setFeedback(isRegister ? "Account created. Welcome." : "Signed in.");
       await refreshData();
     } catch (error) {
