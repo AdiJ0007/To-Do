@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pulse Tasks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="projects-page">
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="app-shell">
+      <header class="topbar reveal">
+        <div>
+          <p class="eyebrow">Shared Task Command Center</p>
+          <h1>Pulse Tasks</h1>
+          <p class="subtitle">Sign in, create shared projects, and assign tasks to multiple people.</p>
+        </div>
+        <div class="topbar-actions">
+          <a class="nav-link btn-secondary hidden" href="tasks.html">Open Tasks</a>
+          <button id="manageUsersBtn" class="btn-secondary hidden" type="button">Manage Users</button>
+          <div class="session-chip hidden" id="sessionChip">
+            <span id="sessionName">Not signed in</span>
+            <button id="signOutBtn" class="btn-secondary" type="button">Sign out</button>
+          </div>
+        </div>
+      </header>
+
+      <section id="authView" class="auth-view reveal">
+        <div class="panel auth-card">
+          <div class="auth-mode-tabs" role="tablist" aria-label="Authentication mode">
+            <button id="loginTabBtn" type="button" class="auth-tab active">Sign In</button>
+            <button id="registerTabBtn" type="button" class="auth-tab">Register</button>
+          </div>
+          <form id="authForm" class="auth-form">
+            <label id="nameField">
+              <span>Name</span>
+              <input id="authName" type="text" maxlength="120" placeholder="Your name" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input id="authEmail" type="email" maxlength="255" placeholder="name@example.com" required />
+            </label>
+            <label>
+              <span>Password</span>
+              <input id="authPassword" type="password" minlength="8" maxlength="128" required />
+            </label>
+            <div class="auth-actions">
+              <button id="authSubmitBtn" class="btn-accent" type="submit">Sign In</button>
+            </div>
+            <div class="provider-actions">
+              <span class="provider-divider">or continue with</span>
+              <button id="googleSignInBtn" class="btn-google" type="button">Google</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="workspaceView" class="workspace hidden">
+        <section class="stats-grid reveal">
+          <article class="stat-card">
+            <h2>Total</h2>
+            <p id="statTotal">0</p>
+          </article>
+          <article class="stat-card">
+            <h2>Completed</h2>
+            <p id="statCompleted">0</p>
+          </article>
+          <article class="stat-card">
+            <h2>Pending</h2>
+            <p id="statPending">0</p>
+          </article>
+          <article class="stat-card">
+            <h2>High Priority</h2>
+            <p id="statHighPriority">0</p>
+          </article>
+        </section>
+
+        <section class="panel reveal project-panel">
+          <div class="form-heading-row">
+            <h2>Create Project</h2>
+            <p class="subtle-inline">Invite multiple collaborators at once.</p>
+          </div>
+          <form id="projectForm" class="form-stack">
+            <div class="field-grid">
+              <label>
+                <span>Name</span>
+                <input id="projectName" type="text" maxlength="255" required />
+              </label>
+              <label>
+                <span>Collaborators</span>
+                <select id="projectMemberIds" multiple size="4"></select>
+              </label>
+              <label class="full-width">
+                <span>Description</span>
+                <textarea id="projectDescription" rows="2" maxlength="5000"></textarea>
+              </label>
+            </div>
+            <div class="form-actions-row">
+              <button class="btn-accent" type="submit">Add Project</button>
+            </div>
+          </form>
+          <div id="projectList" class="project-list"></div>
+        </section>
+
+        <section class="panel reveal task-panel">
+          <div class="form-heading-row">
+            <h2>Create Task</h2>
+            <p class="subtle-inline">Assign to a project and multiple people.</p>
+          </div>
+          <form id="todoForm" class="form-stack">
+            <div class="field-grid">
+              <label>
+                <span>Title</span>
+                <input id="title" name="title" type="text" maxlength="255" required />
+              </label>
+              <label>
+                <span>Project</span>
+                <select id="projectSelect">
+                  <option value="">No project</option>
+                </select>
+              </label>
+              <label>
+                <span>Priority</span>
+                <select id="priority" name="priority">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+              <label>
+                <span>Assignees</span>
+                <select id="todoAssigneeIds" multiple size="4"></select>
+              </label>
+              <label class="full-width">
+                <span>Description</span>
+                <textarea id="description" name="description" rows="2" maxlength="5000"></textarea>
+              </label>
+              <label>
+                <span>Due Date</span>
+                <input id="dueDate" name="dueDate" type="datetime-local" />
+              </label>
+            </div>
+            <div class="form-actions-row">
+              <button class="btn-accent" type="submit">Add Task</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel reveal task-list-panel">
+          <div class="controls-row">
+            <label>
+              <span>Search</span>
+              <input id="searchInput" type="text" placeholder="Search title or description" />
+            </label>
+            <label>
+              <span>Status</span>
+              <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select>
+            </label>
+            <label>
+              <span>Priority</span>
+              <select id="priorityFilter">
+                <option value="all">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+            <label>
+              <span>Project</span>
+              <select id="projectFilter">
+                <option value="all">All projects</option>
+              </select>
+            </label>
+            <label>
+              <span>Sort By</span>
+              <select id="sortBy">
+                <option value="created_at">Created</option>
+                <option value="updated_at">Updated</option>
+                <option value="title">Title</option>
+                <option value="due_date">Due Date</option>
+              </select>
+            </label>
+            <label>
+              <span>Order</span>
+              <select id="sortOrder">
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="list-head-row">
+            <h2>Tasks</h2>
+            <button id="refreshBtn" class="btn-secondary" type="button">Refresh</button>
+          </div>
+
+          <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+
+          <div id="todoList" class="todo-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <template id="projectItemTemplate">
+      <article class="project-card">
+        <div>
+          <h3 class="project-title"></h3>
+          <p class="project-desc"></p>
+          <div class="project-collaborators-list"></div>
+        </div>
+        <div class="project-meta">
+          <span class="project-members"></span>
+          <span class="project-owner"></span>
+          <div class="project-actions">
+            <button type="button" data-action="edit" class="btn-secondary">Edit</button>
+            <button type="button" data-action="delete" class="btn-danger">Delete</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="todoItemTemplate">
+      <article class="todo-item">
+        <div class="todo-main">
+          <label class="checkbox-wrap">
+            <input type="checkbox" data-action="toggle" />
+            <span class="checkbox-ui"></span>
+          </label>
+          <div class="todo-copy">
+            <div class="todo-title-row">
+              <h3 class="todo-title"></h3>
+              <span class="priority-badge"></span>
+            </div>
+            <p class="todo-desc"></p>
+            <p class="todo-meta"></p>
+            <p class="todo-people"></p>
+            <div class="todo-assignees-list"></div>
+          </div>
+        </div>
+        <div class="todo-actions">
+          <button type="button" data-action="edit" class="btn-secondary">Edit</button>
+          <button type="button" data-action="delete" class="btn-danger">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <dialog id="editDialog" class="edit-dialog">
+      <form id="editForm" method="dialog">
+        <h2>Edit Task</h2>
+        <label>
+          <span>Title</span>
+          <input id="editTitle" name="title" type="text" maxlength="255" required />
+        </label>
+        <label>
+          <span>Description</span>
+          <textarea id="editDescription" name="description" rows="3" maxlength="5000"></textarea>
+        </label>
+        <div class="field-grid dialog-grid">
+          <label>
+            <span>Project</span>
+            <select id="editProjectId">
+              <option value="">No project</option>
+            </select>
+          </label>
+          <label>
+            <span>Priority</span>
+            <select id="editPriority" name="priority">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <label class="full-width">
+            <span>Assignees</span>
+            <select id="editAssigneeIds" multiple size="4"></select>
+          </label>
+          <label>
+            <span>Due Date</span>
+            <input id="editDueDate" name="dueDate" type="datetime-local" />
+          </label>
+        </div>
+        <menu>
+          <button type="button" id="cancelEditBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-accent">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="usersDialog" class="edit-dialog">
+      <form id="usersForm" method="dialog">
+        <h2>Manage Users</h2>
+        <div id="usersList" class="members-list"></div>
+        <menu>
+          <button type="button" id="closeUsersBtn" class="btn-secondary">Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="projectDialog" class="edit-dialog">
+      <form id="projectEditForm" method="dialog">
+        <h2>Edit Project</h2>
+        <label>
+          <span>Name</span>
+          <input id="editProjectName" type="text" maxlength="255" required />
+        </label>
+        <label>
+          <span>Description</span>
+          <textarea id="editProjectDescription" rows="3" maxlength="5000"></textarea>
+        </label>
+        <div class="collaborators-section">
+          <label>
+            <span>Current Members</span>
+            <div id="editProjectCurrentMembers" class="members-list"></div>
+          </label>
+          <label>
+            <span>Add Collaborators</span>
+            <select id="editProjectMemberIds" multiple size="4"></select>
+          </label>
+        </div>
+        <menu>
+          <button type="button" id="cancelProjectEditBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-accent">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
